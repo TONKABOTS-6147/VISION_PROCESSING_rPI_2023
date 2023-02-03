@@ -301,8 +301,7 @@ public final class Main {
   *
   * @author GRIP
   */
-
-  public class GripPipeline implements VisionPipeline {
+  public static class GripPipeline implements VisionPipeline {
 
     //Outputs
     private Mat cvResizeOutput = new Mat();
@@ -497,8 +496,76 @@ public final class Main {
   
   }
   
-  
 
+  /**
+   * Example pipeline.
+   */
+  // public static class MyPipeline implements VisionPipeline {
+  //   public int val;
 
+  //   @Override
+  //   public void process(Mat mat) {
+  //     val += 1;
+  //   }
+  // }
 
+  /**
+   * Main.
+   */
+  public static void main(String... args) {
+    if (args.length > 0) {
+      configFile = args[0];
+    }
+
+    // read configuration
+    if (!readConfig()) {
+      return;
+    }
+
+    // start NetworkTables
+    NetworkTableInstance ntinst = NetworkTableInstance.getDefault();
+    if (server) {
+      System.out.println("Setting up NetworkTables server");
+      ntinst.startServer();
+    } else {
+      System.out.println("Setting up NetworkTables client for team " + team);
+      ntinst.startClient4("wpilibpi");
+      ntinst.setServerTeam(team);
+      ntinst.startDSClient();
+    }
+
+    // start cameras
+    for (CameraConfig config : cameraConfigs) {
+      cameras.add(startCamera(config));
+    }
+
+    // start switched cameras
+    for (SwitchedCameraConfig config : switchedCameraConfigs) {
+      startSwitchedCamera(config);
+    }
+
+    // start image processing on camera 0 if present
+    if (cameras.size() >= 1) {
+      /*
+      VisionThread visionThread = new VisionThread(cameras.get(0),
+              new MyPipeline(), pipeline -> {
+        // do something with pipeline results
+      });
+      */
+      VisionThread visionThread = new VisionThread(cameras.get(0),
+              new GripPipeline(), pipeline ->  {
+        // do something with pipeline results 
+      });
+      visionThread.start();
+    }
+
+    // loop forever
+    for (;;) {
+      try {
+        Thread.sleep(10000);
+      } catch (InterruptedException ex) {
+        return;
+      }
+    }
+  }
 }
