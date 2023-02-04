@@ -24,6 +24,7 @@ import edu.wpi.first.networktables.NetworkTableEvent;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.vision.VisionPipeline;
 import edu.wpi.first.vision.VisionThread;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 //import org.opencv.core.Mat;
 
@@ -465,6 +466,10 @@ public final class Main {
       minRatio, double maxRatio, List<MatOfPoint> output) {
       final MatOfInt hull = new MatOfInt();
       output.clear();
+
+      // Test:
+      System.out.println("Pipeline Running...");
+
       //operation
       for (int i = 0; i < inputContours.size(); i++) {
         final MatOfPoint contour = inputContours.get(i);
@@ -553,7 +558,7 @@ public final class Main {
       });
       */
       VisionThread visionThread = new VisionThread(cameras.get(0),
-              new GripPipeline(), pipeline ->  {
+              new GripPipeline(), pipeline ->  { SmartDashboard.putNumber("Test rPi", 1);
         // do something with pipeline results 
       });
       visionThread.start();
