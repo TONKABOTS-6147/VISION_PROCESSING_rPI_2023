@@ -26,6 +26,9 @@ import edu.wpi.first.vision.VisionPipeline;
 import edu.wpi.first.vision.VisionThread;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+
+import java.util.Date;
+
 //import org.opencv.core.Mat;
 
 //import edu.wpi.first.wpilibj.vision.VisionPipeline;
@@ -83,6 +86,7 @@ import org.opencv.objdetect.*;
 
 public final class Main {
   private static String configFile = "/boot/frc.json";
+  
 
   @SuppressWarnings("MemberName")
   public static class CameraConfig {
@@ -468,7 +472,7 @@ public final class Main {
       output.clear();
 
       // Test:
-      System.out.println("Pipeline Running...");
+      // System.out.println("Pipeline Running...");
 
       //operation
       for (int i = 0; i < inputContours.size(); i++) {
@@ -568,6 +572,7 @@ public final class Main {
     for (;;) {
       try {
         Thread.sleep(10000);
+        System.out.println(new Date());
       } catch (InterruptedException ex) {
         return;
       }
