@@ -24,7 +24,6 @@ import edu.wpi.first.networktables.NetworkTableEvent;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.vision.VisionPipeline;
 import edu.wpi.first.vision.VisionThread;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
 import java.util.Date;
@@ -306,12 +305,14 @@ public final class Main {
   *
   * @author GRIP
   */
-  public static class GripPipeline implements VisionPipeline {
+  public static class ConePipeline implements VisionPipeline {
 
     //Outputs
     private Mat cvResizeOutput = new Mat();
     private Mat hsvThresholdOutput = new Mat();
     private ArrayList<MatOfPoint> findContoursOutput = new ArrayList<MatOfPoint>();
+
+    // VERY IMPORTANT:
     private ArrayList<MatOfPoint> filterContoursOutput = new ArrayList<MatOfPoint>();
   
     static {
@@ -349,14 +350,41 @@ public final class Main {
       double filterContoursMinWidth = 10.0;
       double filterContoursMaxWidth = 1000.0;
       double filterContoursMinHeight = 0.0;
-      double filterContoursMaxHeight = 1000;
+      double filterContoursMaxHeight = 1000.0;
       double[] filterContoursSolidity = {24.751143266925705, 100};
-      double filterContoursMaxVertices = 1000000;
-      double filterContoursMinVertices = 0;
-      double filterContoursMinRatio = 0;
-      double filterContoursMaxRatio = 1000;
+      double filterContoursMaxVertices = 1000000.0;
+      double filterContoursMinVertices = 0.0;
+      double filterContoursMinRatio = 0.0;
+      double filterContoursMaxRatio = 1000.0;
       filterContours(filterContoursContours, filterContoursMinArea, filterContoursMinPerimeter, filterContoursMinWidth, filterContoursMaxWidth, filterContoursMinHeight, filterContoursMaxHeight, filterContoursSolidity, filterContoursMaxVertices, filterContoursMinVertices, filterContoursMinRatio, filterContoursMaxRatio, filterContoursOutput);
-  
+
+
+
+      // logic: accessing the "filterContoursOutput" instance variable which is updated with the previously called "filterContours" method:
+      for (int currentContour = 0; currentContour < filterContoursOutput.size(); currentContour++) {
+        // adapted from sirlanceabot2021 opencv's minarearect implementation
+        RotatedRect rotatedRect;
+        MatOfPoint2f NewMtx = new MatOfPoint2f(filterContoursOutput.get(currentContour));
+        rotatedRect = Imgproc.minAreaRect(NewMtx);
+        NewMtx.release();
+        Point[] boxPts = new Point[4];
+        // ^ Creates a new Arraylist of Point objects of size 4 ^
+        rotatedRect.points(boxPts);
+        List<MatOfPoint> listMidContour = new ArrayList<MatOfPoint>();
+        listMidContour.add(new MatOfPoint(boxPts[0], boxPts[1], boxPts[2], boxPts[3]));
+
+        Imgproc.polylines(source0 /* the original image, since we are in the method that uses it as an argument */,
+                          listMidContour /* The points */,
+                          true /* Is a Closed Polygon? */,
+                          new Scalar(255, 0, 0), /* For RGB Values of Box */
+                          2,
+                          Imgproc.LINE_4 /* Line type */);
+        System.out.println("Contour " + currentContour + " angle: " + rotatedRect.angle);                          
+      }
+      System.out.println("Process method running...");
+
+
+
     }
   
     /**
@@ -470,10 +498,6 @@ public final class Main {
       minRatio, double maxRatio, List<MatOfPoint> output) {
       final MatOfInt hull = new MatOfInt();
       output.clear();
-
-      // Test:
-      // System.out.println("Pipeline Running...");
-
       //operation
       for (int i = 0; i < inputContours.size(); i++) {
         final MatOfPoint contour = inputContours.get(i);
@@ -496,16 +520,14 @@ public final class Main {
         if (contour.rows() < minVertexCount || contour.rows() > maxVertexCount)	continue;
         final double ratio = bb.width / (double)bb.height;
         if (ratio < minRatio || ratio > maxRatio) continue;
+
         output.add(contour);
       }
     }
-  
-  
-  
-  
+
   }
   
-
+  
   /**
    * Example pipeline.
    */
@@ -562,7 +584,7 @@ public final class Main {
       });
       */
       VisionThread visionThread = new VisionThread(cameras.get(0),
-              new GripPipeline(), pipeline ->  { SmartDashboard.putNumber("Test rPi", 1);
+              new ConePipeline(), pipeline ->  {
         // do something with pipeline results 
       });
       visionThread.start();
