@@ -24,9 +24,10 @@ import edu.wpi.first.networktables.NetworkTableEvent;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.vision.VisionPipeline;
 import edu.wpi.first.vision.VisionThread;
+// import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-
-import java.util.Date;
+// import java.util.Date;
 
 //import org.opencv.core.Mat;
 
@@ -361,30 +362,48 @@ public final class Main {
 
 
       // logic: accessing the "filterContoursOutput" instance variable which is updated with the previously called "filterContours" method:
-      for (int currentContour = 0; currentContour < filterContoursOutput.size(); currentContour++) {
-        // adapted from sirlanceabot2021 opencv's minarearect implementation
-        RotatedRect rotatedRect;
-        MatOfPoint2f NewMtx = new MatOfPoint2f(filterContoursOutput.get(currentContour));
-        rotatedRect = Imgproc.minAreaRect(NewMtx);
-        NewMtx.release();
-        Point[] boxPts = new Point[4];
-        // ^ Creates a new Arraylist of Point objects of size 4 ^
-        rotatedRect.points(boxPts);
-        List<MatOfPoint> listMidContour = new ArrayList<MatOfPoint>();
-        listMidContour.add(new MatOfPoint(boxPts[0], boxPts[1], boxPts[2], boxPts[3]));
 
-        Imgproc.polylines(source0 /* the original image, since we are in the method that uses it as an argument */,
-                          listMidContour /* The points */,
-                          true /* Is a Closed Polygon? */,
-                          new Scalar(255, 0, 0), /* For RGB Values of Box */
-                          2,
-                          Imgproc.LINE_4 /* Line type */);
-        System.out.println("Contour " + currentContour + " angle: " + rotatedRect.angle);                          
+      if (filterContoursOutput.size() != 0) {
+      // MatOfPoint2f matrix = new MatOfPoint2f(filterContoursOutput.get(0));
+      // RotatedRect rect;
+      // rect = Imgproc.minAreaRect(matrix);
+      // matrix.release();
+      // Point[] boxPts = new Point[4];
+      // rect.points(boxPts);
+      // List<MatOfPoint> listMidContour = new ArrayList<MatOfPoint>();
+      // listMidContour.add(new MatOfPoint(boxPts[0], boxPts[1], boxPts[2], boxPts[3]));
+      // System.out.println(rect.angle);
+        System.out.println("Seeing Object!");
       }
-      System.out.println("Process method running...");
 
 
 
+
+
+
+
+      // for (int currentContour = 0; currentContour < filterContoursOutput.size(); currentContour++) {
+      //   // adapted from sirlanceabot2021 opencv's minarearect implementation
+      //   RotatedRect rotatedRect;
+      //   MatOfPoint2f NewMtx = new MatOfPoint2f(filterContoursOutput.get(currentContour));
+      //   rotatedRect = Imgproc.minAreaRect(NewMtx);
+      //   NewMtx.release();
+      //   Point[] boxPts = new Point[4];
+      //   // ^ Creates a new Arraylist of Point objects of size 4 ^
+      //   rotatedRect.points(boxPts);
+      //   List<MatOfPoint> listMidContour = new ArrayList<MatOfPoint>();
+      //   listMidContour.add(new MatOfPoint(boxPts[0], boxPts[1], boxPts[2], boxPts[3]));
+
+      //   Imgproc.polylines(source0 /* the original image, since we are in the method that uses it as an argument */,
+      //                     listMidContour /* The points */,
+      //                     true /* Is a Closed Polygon? */,
+      //                     new Scalar(255, 0, 0), /* For RGB Values of Box */
+      //                     2,
+      //                     Imgproc.LINE_4 /* Line type */);
+      //   System.out.println("Contour " + currentContour + " angle: " + rotatedRect.angle);                          
+      // }
+      // System.out.println("Process method running...");
+      // CameraServer.putVideo(cameraConfigs.get(0), 1, 1);
     }
   
     /**
@@ -526,6 +545,7 @@ public final class Main {
     }
 
   }
+
   
   
   /**
@@ -594,7 +614,7 @@ public final class Main {
     for (;;) {
       try {
         Thread.sleep(10000);
-        System.out.println(new Date());
+        // System.out.println(new Date());
       } catch (InterruptedException ex) {
         return;
       }
