@@ -1,6 +1,7 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+// the WPILib BSD license file in the root directory of this project 
+
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -309,11 +310,10 @@ public final class Main {
   public static class ConePipeline implements VisionPipeline {
 
     //Outputs
-    private Mat cvResizeOutput = new Mat();
     private Mat hsvThresholdOutput = new Mat();
+    private Mat cvErodeOutput = new Mat();
+    private Mat cvDilateOutput = new Mat();
     private ArrayList<MatOfPoint> findContoursOutput = new ArrayList<MatOfPoint>();
-
-    // VERY IMPORTANT:
     private ArrayList<MatOfPoint> filterContoursOutput = new ArrayList<MatOfPoint>();
   
     static {
@@ -323,95 +323,51 @@ public final class Main {
     /**
      * This is the primary method that runs the entire pipeline and updates the outputs.
      */
-    @Override	public void process(Mat source0) {
-      // Step CV_resize0:
-      Mat cvResizeSrc = source0;
-      Size cvResizeDsize = new Size(0, 0);
-      double cvResizeFx = 0.25;
-      double cvResizeFy = 0.25;
-      int cvResizeInterpolation = Imgproc.INTER_LINEAR;
-      cvResize(cvResizeSrc, cvResizeDsize, cvResizeFx, cvResizeFy, cvResizeInterpolation, cvResizeOutput);
-  
+    public void process(Mat source0) {
       // Step HSV_Threshold0:
-      Mat hsvThresholdInput = cvResizeOutput;
-      double[] hsvThresholdHue = {0.0, 69.59815033562474};
-      double[] hsvThresholdSaturation = {61.01534725064087, 244.88742097504866};
+      Mat hsvThresholdInput = source0;
+      double[] hsvThresholdHue = {0.0, 67.88711882436874};
+      double[] hsvThresholdSaturation = {26.693308503144344, 244.88742097504866};
       double[] hsvThresholdValue = {203.1879162439407, 255.0};
       hsvThreshold(hsvThresholdInput, hsvThresholdHue, hsvThresholdSaturation, hsvThresholdValue, hsvThresholdOutput);
   
+      // Step CV_erode0:
+      Mat cvErodeSrc = hsvThresholdOutput;
+      Mat cvErodeKernel = new Mat();
+      Point cvErodeAnchor = new Point(-1, -1);
+      double cvErodeIterations = 3.0;
+      int cvErodeBordertype = Core.BORDER_CONSTANT;
+      Scalar cvErodeBordervalue = new Scalar(-1);
+      cvErode(cvErodeSrc, cvErodeKernel, cvErodeAnchor, cvErodeIterations, cvErodeBordertype, cvErodeBordervalue, cvErodeOutput);
+  
+      // Step CV_dilate0:
+      Mat cvDilateSrc = cvErodeOutput;
+      Mat cvDilateKernel = new Mat();
+      Point cvDilateAnchor = new Point(-1, -1);
+      double cvDilateIterations = 6.0;
+      int cvDilateBordertype = Core.BORDER_CONSTANT;
+      Scalar cvDilateBordervalue = new Scalar(-1);
+      cvDilate(cvDilateSrc, cvDilateKernel, cvDilateAnchor, cvDilateIterations, cvDilateBordertype, cvDilateBordervalue, cvDilateOutput);
+  
       // Step Find_Contours0:
-      Mat findContoursInput = hsvThresholdOutput;
-      boolean findContoursExternalOnly = true;
+      Mat findContoursInput = cvDilateOutput;
+      boolean findContoursExternalOnly = false;
       findContours(findContoursInput, findContoursExternalOnly, findContoursOutput);
   
       // Step Filter_Contours0:
       ArrayList<MatOfPoint> filterContoursContours = findContoursOutput;
-      double filterContoursMinArea = 100.0;
-      double filterContoursMinPerimeter = 10.0;
-      double filterContoursMinWidth = 10.0;
-      double filterContoursMaxWidth = 1000.0;
-      double filterContoursMinHeight = 0.0;
-      double filterContoursMaxHeight = 1000.0;
-      double[] filterContoursSolidity = {24.751143266925705, 100};
-      double filterContoursMaxVertices = 1000000.0;
-      double filterContoursMinVertices = 0.0;
-      double filterContoursMinRatio = 0.0;
-      double filterContoursMaxRatio = 1000.0;
+      double filterContoursMinArea = 170.0;
+      double filterContoursMinPerimeter = 112.0;
+      double filterContoursMinWidth = 45.0;
+      double filterContoursMaxWidth = 1000;
+      double filterContoursMinHeight = 22.0;
+      double filterContoursMaxHeight = 1000;
+      double[] filterContoursSolidity = {29.910270737508238, 100};
+      double filterContoursMaxVertices = 1000000;
+      double filterContoursMinVertices = 0;
+      double filterContoursMinRatio = 0;
+      double filterContoursMaxRatio = 1000;
       filterContours(filterContoursContours, filterContoursMinArea, filterContoursMinPerimeter, filterContoursMinWidth, filterContoursMaxWidth, filterContoursMinHeight, filterContoursMaxHeight, filterContoursSolidity, filterContoursMaxVertices, filterContoursMinVertices, filterContoursMinRatio, filterContoursMaxRatio, filterContoursOutput);
-
-
-
-      // logic: accessing the "filterContoursOutput" instance variable which is updated with the previously called "filterContours" method:
-
-      if (filterContoursOutput.size() != 0) {
-      // MatOfPoint2f matrix = new MatOfPoint2f(filterContoursOutput.get(0));
-      // RotatedRect rect;
-      // rect = Imgproc.minAreaRect(matrix);
-      // matrix.release();
-      // Point[] boxPts = new Point[4];
-      // rect.points(boxPts);
-      // List<MatOfPoint> listMidContour = new ArrayList<MatOfPoint>();
-      // listMidContour.add(new MatOfPoint(boxPts[0], boxPts[1], boxPts[2], boxPts[3]));
-      // System.out.println(rect.angle);
-        System.out.println("Seeing Object!");
-      }
-
-
-
-
-
-
-
-      // for (int currentContour = 0; currentContour < filterContoursOutput.size(); currentContour++) {
-      //   // adapted from sirlanceabot2021 opencv's minarearect implementation
-      //   RotatedRect rotatedRect;
-      //   MatOfPoint2f NewMtx = new MatOfPoint2f(filterContoursOutput.get(currentContour));
-      //   rotatedRect = Imgproc.minAreaRect(NewMtx);
-      //   NewMtx.release();
-      //   Point[] boxPts = new Point[4];
-      //   // ^ Creates a new Arraylist of Point objects of size 4 ^
-      //   rotatedRect.points(boxPts);
-      //   List<MatOfPoint> listMidContour = new ArrayList<MatOfPoint>();
-      //   listMidContour.add(new MatOfPoint(boxPts[0], boxPts[1], boxPts[2], boxPts[3]));
-
-      //   Imgproc.polylines(source0 /* the original image, since we are in the method that uses it as an argument */,
-      //                     listMidContour /* The points */,
-      //                     true /* Is a Closed Polygon? */,
-      //                     new Scalar(255, 0, 0), /* For RGB Values of Box */
-      //                     2,
-      //                     Imgproc.LINE_4 /* Line type */);
-      //   System.out.println("Contour " + currentContour + " angle: " + rotatedRect.angle);                          
-      // }
-      // System.out.println("Process method running...");
-      // CameraServer.putVideo(cameraConfigs.get(0), 1, 1);
-    }
-  
-    /**
-     * This method is a generated getter for the output of a CV_resize.
-     * @return Mat output from CV_resize.
-     */
-    public Mat cvResizeOutput() {
-      return cvResizeOutput;
     }
   
     /**
@@ -420,6 +376,22 @@ public final class Main {
      */
     public Mat hsvThresholdOutput() {
       return hsvThresholdOutput;
+    }
+  
+    /**
+     * This method is a generated getter for the output of a CV_erode.
+     * @return Mat output from CV_erode.
+     */
+    public Mat cvErodeOutput() {
+      return cvErodeOutput;
+    }
+  
+    /**
+     * This method is a generated getter for the output of a CV_dilate.
+     * @return Mat output from CV_dilate.
+     */
+    public Mat cvDilateOutput() {
+      return cvDilateOutput;
     }
   
     /**
@@ -440,23 +412,6 @@ public final class Main {
   
   
     /**
-     * Resizes an image.
-     * @param src The image to resize.
-     * @param dSize size to set the image.
-     * @param fx scale factor along X axis.
-     * @param fy scale factor along Y axis.
-     * @param interpolation type of interpolation to use.
-     * @param dst output image.
-     */
-    private void cvResize(Mat src, Size dSize, double fx, double fy, int interpolation,
-      Mat dst) {
-      if (dSize==null) {
-        dSize = new Size(0,0);
-      }
-      Imgproc.resize(src, dst, dSize, fx, fy, interpolation);
-    }
-  
-    /**
      * Segment an image based on hue, saturation, and value ranges.
      *
      * @param input The image on which to perform the HSL threshold.
@@ -470,6 +425,54 @@ public final class Main {
       Imgproc.cvtColor(input, out, Imgproc.COLOR_BGR2HSV);
       Core.inRange(out, new Scalar(hue[0], sat[0], val[0]),
         new Scalar(hue[1], sat[1], val[1]), out);
+    }
+  
+    /**
+     * Expands area of lower value in an image.
+     * @param src the Image to erode.
+     * @param kernel the kernel for erosion.
+     * @param anchor the center of the kernel.
+     * @param iterations the number of times to perform the erosion.
+     * @param borderType pixel extrapolation method.
+     * @param borderValue value to be used for a constant border.
+     * @param dst Output Image.
+     */
+    private void cvErode(Mat src, Mat kernel, Point anchor, double iterations,
+      int borderType, Scalar borderValue, Mat dst) {
+      if (kernel == null) {
+        kernel = new Mat();
+      }
+      if (anchor == null) {
+        anchor = new Point(-1,-1);
+      }
+      if (borderValue == null) {
+        borderValue = new Scalar(-1);
+      }
+      Imgproc.erode(src, dst, kernel, anchor, (int)iterations, borderType, borderValue);
+    }
+  
+    /**
+     * Expands area of higher value in an image.
+     * @param src the Image to dilate.
+     * @param kernel the kernel for dilation.
+     * @param anchor the center of the kernel.
+     * @param iterations the number of times to perform the dilation.
+     * @param borderType pixel extrapolation method.
+     * @param borderValue value to be used for a constant border.
+     * @param dst Output Image.
+     */
+    private void cvDilate(Mat src, Mat kernel, Point anchor, double iterations,
+    int borderType, Scalar borderValue, Mat dst) {
+      if (kernel == null) {
+        kernel = new Mat();
+      }
+      if (anchor == null) {
+        anchor = new Point(-1,-1);
+      }
+      if (borderValue == null){
+        borderValue = new Scalar(-1);
+      }
+      Imgproc.dilate(src, dst, kernel, anchor, (int)iterations, borderType, borderValue);
     }
   
     /**
@@ -539,12 +542,16 @@ public final class Main {
         if (contour.rows() < minVertexCount || contour.rows() > maxVertexCount)	continue;
         final double ratio = bb.width / (double)bb.height;
         if (ratio < minRatio || ratio > maxRatio) continue;
-
         output.add(contour);
       }
     }
-
+  
+  
+  
+  
   }
+
+
 
   
   
@@ -605,10 +612,36 @@ public final class Main {
       */
       VisionThread visionThread = new VisionThread(cameras.get(0),
               new ConePipeline(), pipeline ->  {
-        // do something with pipeline results 
+                  
+      if (pipeline.filterContoursOutput.size() != 0) {
+        // MatOfPoint2f matrix = new MatOfPoint2f();
+        MatOfPoint2f matrix = new MatOfPoint2f(pipeline.filterContoursOutput.get(0).toArray());
+        RotatedRect rect;
+        rect = Imgproc.minAreaRect(matrix);
+        matrix.release();
+        Point[] boxPts = new Point[4];
+        rect.points(boxPts);
+        List<MatOfPoint> listMidContour = new ArrayList<MatOfPoint>();
+        listMidContour.add(new MatOfPoint(boxPts[0], boxPts[1], boxPts[2], boxPts[3]));
+        System.out.println(rect.angle);
+        SmartDashboard.putNumber("Angle", rect.angle);
+        // System.out.println(rect.angle);
+    
+        // Imgproc.polylines(source0 /* the original image, since we are in the method that uses it as an argument */,
+        //                 listMidContour /* The points */,
+        //                 true /* Is a Closed Polygon? */,
+        //                 new Scalar(255, 0, 0), /* For RGB Values of Box */
+        //                 2,
+        //                 Imgproc.LINE_4 /* Line type */);   
+    
+        // System.out.println("Seeing Object...");           
+      }
+                
       });
       visionThread.start();
+      // visionThread.
     }
+    SmartDashboard.putNumber("Hello", 1);
 
     // loop forever
     for (;;) {
