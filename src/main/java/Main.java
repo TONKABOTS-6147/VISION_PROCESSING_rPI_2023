@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import javax.sql.rowset.spi.SyncResolver;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -22,19 +24,12 @@ import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.MjpegServer;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.cscore.VideoSource;
-import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEvent;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.NetworkTableValue;
 import edu.wpi.first.vision.VisionPipeline;
 import edu.wpi.first.vision.VisionThread;
-// import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.SynchronousInterrupt;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
-// import java.util.Date;
-
-//import org.opencv.core.Mat;
-
 //import edu.wpi.first.wpilibj.vision.VisionPipeline;
 
 import org.opencv.core.*;
@@ -89,6 +84,14 @@ import org.opencv.objdetect.*;
  */
 
 public final class Main {
+  // Original:
+  private static Mat original;
+  private static Mat cvDilateSrc;
+  private static double previousWidth;
+  private static double previousHeight;
+  private static CvSource outputStream = CameraServer.putVideo("Processed Camera", 680, 480);
+
+
   private static String configFile = "/boot/frc.json";
   
 
@@ -311,7 +314,6 @@ public final class Main {
   * @author GRIP
   */
 public static class ConePipeline implements VisionPipeline {
-
 	//Outputs
 	private Mat blurOutput = new Mat();
 	private Mat hsvThresholdOutput = new Mat();
@@ -327,7 +329,9 @@ public static class ConePipeline implements VisionPipeline {
 	/**
 	 * This is the primary method that runs the entire pipeline and updates the outputs.
 	 */
-	@Override	public void process(Mat source0) {
+	@Override	public void process(Mat source0) { 
+    Main.original = source0;
+
 		// Step Blur0:
 		Mat blurInput = source0;
 		BlurType blurType = BlurType.get("Median Filter");
@@ -339,6 +343,8 @@ public static class ConePipeline implements VisionPipeline {
 		double[] hsvThresholdHue = {0.0, 40.458312181075684};
 		double[] hsvThresholdSaturation = {60.27749854026081, 255.0};
 		double[] hsvThresholdValue = {201.79855295008036, 255.0};
+
+
 		hsvThreshold(hsvThresholdInput, hsvThresholdHue, hsvThresholdSaturation, hsvThresholdValue, hsvThresholdOutput);
 
 		// Step CV_erode0:
@@ -351,7 +357,7 @@ public static class ConePipeline implements VisionPipeline {
 		cvErode(cvErodeSrc, cvErodeKernel, cvErodeAnchor, cvErodeIterations, cvErodeBordertype, cvErodeBordervalue, cvErodeOutput);
 
 		// Step CV_dilate0:
-		Mat cvDilateSrc = cvErodeOutput;
+		Main.cvDilateSrc = cvErodeOutput;
 		Mat cvDilateKernel = new Mat();
 		Point cvDilateAnchor = new Point(-1, -1);
 		double cvDilateIterations = 5.0;
@@ -509,7 +515,6 @@ public static class ConePipeline implements VisionPipeline {
 		Imgproc.cvtColor(input, out, Imgproc.COLOR_BGR2HSV);
 		Core.inRange(out, new Scalar(hue[0], sat[0], val[0]),
 			new Scalar(hue[1], sat[1], val[1]), out);
-    Core.inRange(input, null, null, out);
 	}
 
 	/**
@@ -632,25 +637,8 @@ public static class ConePipeline implements VisionPipeline {
 	}
 }
 
-
-  
-  
-  /**
-   * Example pipeline.
-   */
-  // public static class MyPipeline implements VisionPipeline {
-  //   public int val;
-
-  //   @Override
-  //   public void process(Mat mat) {
-  //     val += 1;
-  //   }
-  // }
-
-  /**
-   * Main.
-   */
   public static void main(String... args) {
+    System.out.println("Main method running!");
     if (args.length > 0) {
       configFile = args[0];
     }
@@ -684,20 +672,16 @@ public static class ConePipeline implements VisionPipeline {
 
     // start image processing on camera 0 if present
     if (cameras.size() >= 1) {
-      /*
-      VisionThread visionThread = new VisionThread(cameras.get(0),
-              new MyPipeline(), pipeline -> {
-        // do something with pipeline results
-      });
-      */
       VisionThread visionThread = new VisionThread(cameras.get(0), new ConePipeline(), pipeline ->  {
-        if (pipeline.filterContoursOutput.size() != 0) {
-          MatOfPoint largestMatrix = pipeline.filterContoursOutput.get(0);
-          for (int index = 0; index < pipeline.filterContoursOutput.size(); index++) {
-            if (Imgproc.contourArea(pipeline.filterContoursOutput.get(index)) > Imgproc.contourArea(largestMatrix)) {
-              largestMatrix = pipeline.filterContoursOutput.get(index);
+        if (!(pipeline.filterContoursOutput().size() == 0)) {
+          MatOfPoint largestMatrix = pipeline.filterContoursOutput().get(0);
+          for (MatOfPoint contour : pipeline.filterContoursOutput()) {
+            if (Imgproc.contourArea(contour) > Imgproc.contourArea(largestMatrix)) {
+              largestMatrix = contour;
             }
-          } 
+          }
+
+          // Splits up the largest matrix into an array to be processed:
           MatOfPoint2f matrix = new MatOfPoint2f(largestMatrix.toArray());
           RotatedRect rect;
           rect = Imgproc.minAreaRect(matrix);
@@ -706,31 +690,43 @@ public static class ConePipeline implements VisionPipeline {
           rect.points(boxPts);
           List<MatOfPoint> listMidContour = new ArrayList<MatOfPoint>();
           listMidContour.add(new MatOfPoint(boxPts[0], boxPts[1], boxPts[2], boxPts[3]));
-          double angle = rect.angle;
-          // if (rect.size.width < rect.size.height) {
-          //   angle -= 90;
-          // }
-          Imgproc.polylines(matrix, listMidContour, server, null);
+          double angle = -rect.angle;
 
-          SmartDashboard.putNumber("Angle", angle);
-          SmartDashboard.putString("Center", "(" + rect.center.x + ", " + rect.center.y + ")" );
+          Rect rectB = Imgproc.boundingRect(largestMatrix);
+          Point[] bBoxPts = { new Point(rectB.x, rectB.y), new Point(rectB.x + rectB.width, rectB.y), new Point(rectB.x + rectB.width, rectB.y + rectB.height), new Point(rectB.x, rectB.y + rectB.height) };
+          List<MatOfPoint> bListMidContour = new ArrayList<MatOfPoint>();
+          bListMidContour.add(new MatOfPoint(bBoxPts[0], bBoxPts[1], bBoxPts[2], bBoxPts[3]));
 
-          // NetworkTable table = ntinst.getTable("Vision");
-          // table.putValue("Angle", NetworkTableValue.makeDouble(angle));
-          
-          // System.out.println("Angle: " + angle);
-          // System.out.println("Center: (" + rect.center.x + ", " + rect.center.y + ")");
+          if (rect.size.width / rect.size.height > 0.7 && rect.size.width / rect.size.height < 1.3) {
+            SmartDashboard.putBoolean("Standing up?", true);
+          } else {
+            SmartDashboard.putBoolean("Standing up?", false);
+          }
+      
+          Imgproc.polylines(Main.original /* the original image */,
+                          listMidContour /* The points */,
+                          true /* Is a Closed Polygon? */,
+                          new Scalar(255, 0, 0), /* For RGB Values of Box */
+                          1,
+                          Imgproc.LINE_4 /* Line type */);
+          Imgproc.polylines(Main.original, 
+                          bListMidContour, 
+                          true, 
+                          new Scalar(0, 0, 255), 
+                          1, 
+                          Imgproc.LINE_4);
+          Main.outputStream.putFrame(Main.original);
 
-          // NetworkTables.
-
-            
-
-          // Imgproc.polylines(null /* the original image, since we are in the method that uses it as an argument */,
-          //                 listMidContour /* The points */,
-          //                 true /* Is a Closed Polygon? */,
-          //                 new Scalar(255, 0, 0), /* For RGB Values of Box */
-          //                 2,
-          //                 Imgproc.LINE_4 /* Line type */);         
+          SmartDashboard.putNumber("Angle of Object", angle);
+          SmartDashboard.putNumber("X", rect.center.x);
+          SmartDashboard.putNumber("Y", rect.center.y);
+          SmartDashboard.putBoolean("Seeing Object", true);
+        } else {
+          SmartDashboard.putNumber("Angle of Object", 0.0d);
+          SmartDashboard.putNumber("X", 0.0d);
+          SmartDashboard.putNumber("Y", 0.0d);
+          SmartDashboard.putBoolean("Seeing Object", false);
+          Main.outputStream.putFrame(Main.original);
         }     
       });
       visionThread.start();
