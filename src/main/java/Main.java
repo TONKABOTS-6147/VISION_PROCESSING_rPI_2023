@@ -1035,7 +1035,7 @@ public final class Main {
           Main.outputStream.putFrame(Main.original);
         }
         
-        if (!(Main.cubePipeline.filterContoursOutput.size() == 0)) {
+        if (!(Main.cubePipeline.filterContoursOutput().size() == 0)) {
           MatOfPoint largestMatrixCube = Main.cubePipeline.filterContoursOutput().get(0);
           for (MatOfPoint contour : Main.cubePipeline.filterContoursOutput()) {
             if (Imgproc.contourArea(contour) > Imgproc.contourArea(largestMatrixCube)) {
