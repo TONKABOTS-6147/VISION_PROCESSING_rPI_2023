@@ -1058,7 +1058,7 @@ public final class Main {
 
           Imgproc.circle(Main.original,
               new Point(rectB.x, rectB.y),
-              0,
+              1,
               new Scalar(57, 255, 20));
 
           Main.outputStream.putFrame(Main.original);
@@ -1128,7 +1128,7 @@ public final class Main {
 
             Imgproc.circle(Main.original,
                 new Point(rectBCube.x, rectBCube.y),
-                0,
+                1,
                 new Scalar(57, 255, 20));
 
             SmartDashboard.putNumber("Angle of Cube", angleCube);
