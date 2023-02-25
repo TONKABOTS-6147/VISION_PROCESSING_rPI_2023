@@ -631,7 +631,7 @@ public final class Main {
     private Mat cvDilateOutput = new Mat();
     private ArrayList<MatOfPoint> findContoursOutput = new ArrayList<MatOfPoint>();
     private ArrayList<MatOfPoint> filterContoursOutput = new ArrayList<MatOfPoint>();
-
+  
     static {
       System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
@@ -639,23 +639,21 @@ public final class Main {
     /**
      * This is the primary method that runs the entire pipeline and updates the outputs.
      */
-
-
     @Override	public void process(Mat source0) {
       Main.cubePipeline.process(source0);
-
-     // Step Blur0:
+  
+      // Step Blur0:
       Main.original = source0;
       Mat blurInput = source0;
-      BlurType blurType = BlurType.get("Median Filter");
-      double blurRadius = 5.662804435425577;
+      BlurType blurType = BlurType.get("Gaussian Blur");
+      double blurRadius = 5.621523057119637;
       blur(blurInput, blurType, blurRadius, blurOutput);
   
       // Step HSV_Threshold0:
       Mat hsvThresholdInput = blurOutput;
-      double[] hsvThresholdHue = {0.0, 40.45832096920079};
-      double[] hsvThresholdSaturation = {60.27749854026081, 255.0};
-      double[] hsvThresholdValue = {201.79855295008036, 255.0};
+      double[] hsvThresholdHue = {0.0, 37.98189595530153};
+      double[] hsvThresholdSaturation = {50.887672088497325, 174.18575592822182};
+      double[] hsvThresholdValue = {161.11506841619806, 255.0};
       hsvThreshold(hsvThresholdInput, hsvThresholdHue, hsvThresholdSaturation, hsvThresholdValue, hsvThresholdOutput);
   
       // Step CV_erode0:
@@ -683,13 +681,13 @@ public final class Main {
   
       // Step Filter_Contours0:
       ArrayList<MatOfPoint> filterContoursContours = findContoursOutput;
-      double filterContoursMinArea = 115.0;
-      double filterContoursMinPerimeter = 50.0;
+      double filterContoursMinArea = 600.0;
+      double filterContoursMinPerimeter = 80.0;
       double filterContoursMinWidth = 0.0;
-      double filterContoursMaxWidth = 1000.0;
+      double filterContoursMaxWidth = 800.0;
       double filterContoursMinHeight = 0.0;
-      double filterContoursMaxHeight = 1000.0;
-      double[] filterContoursSolidity = {0.0, 100};
+      double filterContoursMaxHeight = 2000.0;
+      double[] filterContoursSolidity = {0.0, 100.0};
       double filterContoursMaxVertices = 1000000.0;
       double filterContoursMinVertices = 0.0;
       double filterContoursMinRatio = 0.0;
