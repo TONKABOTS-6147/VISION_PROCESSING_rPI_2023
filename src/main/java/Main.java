@@ -326,9 +326,9 @@ public final class Main {
   
       // Step HSV_Threshold0:
       Mat hsvThresholdInput = blurOutput;
-      double[] hsvThresholdHue = {106.47748413729595, 180.0};
-      double[] hsvThresholdSaturation = {44.55292424280866, 162.99611843486696};
-      double[] hsvThresholdValue = {90.26540007646797, 255.0};
+      double[] hsvThresholdHue = {110.07194784905415, 151.0385228179827};
+      double[] hsvThresholdSaturation = {85.17471721275247, 204.02490267574584};
+      double[] hsvThresholdValue = {150.69374088331952, 255.0};
       hsvThreshold(hsvThresholdInput, hsvThresholdHue, hsvThresholdSaturation, hsvThresholdValue, hsvThresholdOutput);
   
       // Step CV_erode0:
@@ -356,11 +356,11 @@ public final class Main {
   
       // Step Filter_Contours0:
       ArrayList<MatOfPoint> filterContoursContours = findContoursOutput;
-      double filterContoursMinArea = 140.0;
+      double filterContoursMinArea = 565.0;
       double filterContoursMinPerimeter = 90.0;
-      double filterContoursMinWidth = 0;
+      double filterContoursMinWidth = 24.0;
       double filterContoursMaxWidth = 1000.0;
-      double filterContoursMinHeight = 0;
+      double filterContoursMinHeight = 24.0;
       double filterContoursMaxHeight = 1000;
       double[] filterContoursSolidity = {0.5380680781075285, 100};
       double filterContoursMaxVertices = 1000000;
