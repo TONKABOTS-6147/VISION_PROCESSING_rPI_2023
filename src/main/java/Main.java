@@ -359,7 +359,7 @@ public final class Main {
       double filterContoursMinArea = 140.0;
       double filterContoursMinPerimeter = 90.0;
       double filterContoursMinWidth = 0;
-      double filterContoursMaxWidth = 984.0;
+      double filterContoursMaxWidth = 1000.0;
       double filterContoursMinHeight = 0;
       double filterContoursMaxHeight = 1000;
       double[] filterContoursSolidity = {0.5380680781075285, 100};
@@ -651,8 +651,8 @@ public final class Main {
   
       // Step HSV_Threshold0:
       Mat hsvThresholdInput = blurOutput;
-      double[] hsvThresholdHue = {0.0, 37.98189595530153};
-      double[] hsvThresholdSaturation = {50.887672088497325, 174.18575592822182};
+      double[] hsvThresholdHue = {0.0, 28.802518867987356};
+      double[] hsvThresholdSaturation = {94.1302177823957, 252.51340097941636};
       double[] hsvThresholdValue = {161.11506841619806, 255.0};
       hsvThreshold(hsvThresholdInput, hsvThresholdHue, hsvThresholdSaturation, hsvThresholdValue, hsvThresholdOutput);
   
@@ -681,11 +681,11 @@ public final class Main {
   
       // Step Filter_Contours0:
       ArrayList<MatOfPoint> filterContoursContours = findContoursOutput;
-      double filterContoursMinArea = 600.0;
+      double filterContoursMinArea = 745.0;
       double filterContoursMinPerimeter = 80.0;
-      double filterContoursMinWidth = 0.0;
+      double filterContoursMinWidth = 24.0;
       double filterContoursMaxWidth = 800.0;
-      double filterContoursMinHeight = 0.0;
+      double filterContoursMinHeight = 24.0;
       double filterContoursMaxHeight = 2000.0;
       double[] filterContoursSolidity = {0.0, 100.0};
       double filterContoursMaxVertices = 1000000.0;
@@ -981,7 +981,7 @@ public final class Main {
 
     // start image processing on camera 0 if present
     if (cameras.size() >= 1) {
-      VisionThread visionThread = new VisionThread(cameras.get(0), new ConePipeline(), pipeline ->  {
+      VisionThread visionThread = new VisionThread(cameras.get(0), new ConePipeline(), pipeline -> {
         if (!(pipeline.filterContoursOutput().size() == 0)) {
           MatOfPoint largestMatrix = pipeline.filterContoursOutput().get(0);
           for (MatOfPoint contour : pipeline.filterContoursOutput()) {
@@ -1019,16 +1019,23 @@ public final class Main {
                           1, 
                           Imgproc.LINE_4);
 
-          Main.outputStream.putFrame(Main.original);
+          Imgproc.circle(Main.original, new Point(rectB.x, rectB.y), 1, new Scalar(57, 255, 20));
 
+          Main.outputStream.putFrame(Main.original);
           SmartDashboard.putNumber("Angle of Cone", angle);
           SmartDashboard.putNumber("Cone X", rect.center.x);
           SmartDashboard.putNumber("Cone Y", rect.center.y);
+          SmartDashboard.putNumber("Cone Width", rect.size.width);
+          SmartDashboard.putNumber("Cone Height", rect.size.height);
+          SmartDashboard.putNumber("Cone Area", Imgproc.contourArea(largestMatrix));
           SmartDashboard.putBoolean("Cone in Vision", true);
         } else {
           SmartDashboard.putNumber("Angle of Cone", 0.0d);
           SmartDashboard.putNumber("Cone X", 0.0d);
           SmartDashboard.putNumber("Cone Y", 0.0d);
+          SmartDashboard.putNumber("Cone Width", 0.0d);
+          SmartDashboard.putNumber("Cone Height", 0.0d);
+          SmartDashboard.putNumber("Cone Area", 0.0d);
           SmartDashboard.putBoolean("Cone in Vision", false);
           Main.outputStream.putFrame(Main.original);
         }
@@ -1065,7 +1072,7 @@ public final class Main {
           Imgproc.polylines(Main.original, 
                           bListMidContourCube, 
                           true, 
-                          new Scalar(0, 0, 255), 
+                          new Scalar(57, 255, 20), 
                           1, 
                           Imgproc.LINE_4);
 
