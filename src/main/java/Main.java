@@ -983,6 +983,7 @@ public final class Main {
     if (cameras.size() >= 1) {
       VisionThread visionThread = new VisionThread(cameras.get(0), new ConePipeline(), pipeline -> {
         if (!(pipeline.filterContoursOutput().size() == 0)) {
+          boolean standingUp;
           MatOfPoint largestMatrix = pipeline.filterContoursOutput().get(0);
           for (MatOfPoint contour : pipeline.filterContoursOutput()) {
             if (Imgproc.contourArea(contour) > Imgproc.contourArea(largestMatrix)) {
@@ -991,147 +992,158 @@ public final class Main {
           }
 
           // Splits up the largest matrix into an array to be processed:
-          // MatOfPoint2f matrix = new MatOfPoint2f(largestMatrix.toArray());
-          // RotatedRect rect;
-          // rect = Imgproc.minAreaRect(matrix);
-          // matrix.release();
-          // Point[] boxPts = new Point[4];
-          // rect.points(boxPts);
-          // List<MatOfPoint> listMidContour = new ArrayList<MatOfPoint>();
-          // listMidContour.add(new MatOfPoint(boxPts[0], boxPts[1], boxPts[2], boxPts[3]));
-          // double angle = rect.angle;
+          MatOfPoint2f matrix = new MatOfPoint2f(largestMatrix.toArray());
+          RotatedRect rect;
+          rect = Imgproc.minAreaRect(matrix);
+          matrix.release();
+          Point[] boxPts = new Point[4];
+          rect.points(boxPts);
+          List<MatOfPoint> listMidContour = new ArrayList<MatOfPoint>();
+          listMidContour.add(new MatOfPoint(boxPts[0], boxPts[1], boxPts[2], boxPts[3]));
 
-          // Rect rectB = Imgproc.boundingRect(largestMatrix);
-          // Point[] bBoxPts = { new Point(rectB.x, rectB.y), new Point(rectB.x + rectB.width, rectB.y), new Point(rectB.x + rectB.width, rectB.y + rectB.height), new Point(rectB.x, rectB.y + rectB.height) };
-          // List<MatOfPoint> bListMidContour = new ArrayList<MatOfPoint>();
-          // bListMidContour.add(new MatOfPoint(bBoxPts[0], bBoxPts[1], bBoxPts[2], bBoxPts[3]));
-      
-          // Imgproc.polylines(Main.original /* the original image */,
-          //                 listMidContour /* The points */,
-          //                 true /* Is a Closed Polygon? */,
-          //                 new Scalar(255, 0, 0), /* For RGB Values of Box */
-          //                 1,
-          //                 Imgproc.LINE_4 /* Line type */);
-          // Imgproc.polylines(Main.original, 
-          //                 bListMidContour, 
-          //                 true, 
-          //                 new Scalar(0, 0, 255), 
-          //                 1, 
-          //                 Imgproc.LINE_4);
-          // Imgproc.circle(Main.original, new Point(rectB.x + (rectB.width / 2), rectB.y + (rectB.height / 2)), 1, new Scalar(57, 255, 20));
+          if (rect.size.width / rect.size.height > 0.95 && rect.size.width / rect.size.height < 1.05) {
+            standingUp = true;
+            double angle = rect.angle;
+            Rect rectB = Imgproc.boundingRect(largestMatrix);
+            Point[] bBoxPts = { new Point(rectB.x, rectB.y), new Point(rectB.x + rectB.width, rectB.y), new Point(rectB.x + rectB.width, rectB.y + rectB.height), new Point(rectB.x, rectB.y + rectB.height) };
+            List<MatOfPoint> bListMidContour = new ArrayList<MatOfPoint>();
+            bListMidContour.add(new MatOfPoint(bBoxPts[0], bBoxPts[1], bBoxPts[2], bBoxPts[3]));
+        
+            Imgproc.polylines(Main.original /* the original image */,
+                            listMidContour /* The points */,
+                            true /* Is a Closed Polygon? */,
+                            new Scalar(255, 0, 0), /* For RGB Values of Box */
+                            1,
+                            Imgproc.LINE_4 /* Line type */);
+            Imgproc.polylines(Main.original, 
+                            bListMidContour, 
+                            true, 
+                            new Scalar(0, 0, 255), 
+                            1, 
+                            Imgproc.LINE_4);
+            Imgproc.circle(Main.original, new Point(rectB.x + (rectB.width / 2), rectB.y + (rectB.height / 2)), 1, new Scalar(57, 255, 20));
+            Main.outputStream.putFrame(Main.original);
+            SmartDashboard.putNumber("Cone Angle", angle);
+            SmartDashboard.putString("Center", "(" + Math.round(rectB.x + (rectB.width / 2)) + ", " + Math.round(rectB.y + (rectB.height / 2)) + ")");
+            SmartDashboard.putString("Tip", "(" + null + ", " + null + ")");
+            SmartDashboard.putNumber("Cone X", rectB.x + (rectB.width / 2));
+            SmartDashboard.putNumber("Cone Y", rectB.y + (rectB.height / 2));
+            SmartDashboard.putBoolean("Cone in Vision", true);
+            SmartDashboard.putBoolean("Standing Up", standingUp);
+          } else {
+            standingUp = false;
+            MatOfPoint2f triangle = new MatOfPoint2f();
+            Imgproc.minEnclosingTriangle(largestMatrix, triangle);
+            Point[] pointArray = triangle.toArray();
+            for (int index = 0; index < 3; index++) { Imgproc.line(Main.original, pointArray[index], pointArray[(index + 1) % 3], new Scalar(57, 255, 20), 1, 1); }
+            
+            // Process Triangle Medians:
+            ArrayList<Double> medianArray = new ArrayList<Double>(3);
+            Point currentPoint, currentOppositeMidpoint, absoluteCenter;
+            Point finalPoint = new Point(0, 0);
+            double averageX, averageY;
 
-          MatOfPoint2f triangle = new MatOfPoint2f();
-          Imgproc.minEnclosingTriangle(largestMatrix, triangle);
-          Point[] pointArray = triangle.toArray();
-          for (int index = 0; index < 3; index++) { Imgproc.line(Main.original, pointArray[index], pointArray[(index + 1) % 3], new Scalar(57, 255, 20), 1, 1); }
-          
-          // Process Triangle Medians:
-          ArrayList<Double> medianArray = new ArrayList<Double>(3);
-          Point currentPoint, currentOppositeMidpoint, absoluteCenter;
-          Point finalPoint = new Point(0, 0);
-          double averageX, averageY;
-
-          // Find tip of Cone
-          currentPoint = pointArray[0];
-          averageX = (pointArray[1].x + pointArray[2].x) / 2;
-          averageY = (pointArray[1].y + pointArray[2].y) / 2;
-          currentOppositeMidpoint = new Point(averageX, averageY);
-          medianArray.add(Math.sqrt(Math.pow(currentPoint.x - currentOppositeMidpoint.x, 2) + Math.pow((currentPoint.y - currentOppositeMidpoint.y), 2)));
-
-          currentPoint = pointArray[1];
-          averageX = (pointArray[0].x + pointArray[2].x) / 2;
-          averageY = (pointArray[0].y + pointArray[2].y) / 2;
-          currentOppositeMidpoint = new Point(averageX, averageY);
-          medianArray.add(Math.sqrt(Math.pow(currentPoint.x - currentOppositeMidpoint.x, 2) + Math.pow((currentPoint.y - currentOppositeMidpoint.y), 2)));
-
-          currentPoint = pointArray[2];
-          averageX = (pointArray[0].x + pointArray[1].x) / 2;
-          averageY = (pointArray[0].y + pointArray[1].y) / 2;
-          currentOppositeMidpoint = new Point(averageX, averageY);
-          medianArray.add(Math.sqrt(Math.pow(currentPoint.x - currentOppositeMidpoint.x, 2) + Math.pow((currentPoint.y - currentOppositeMidpoint.y), 2)));
-
-          double slope, angleOfSlope = 0;
-          if (medianArray.get(0) > medianArray.get(1) && medianArray.get(0) > medianArray.get(2)) {
-            finalPoint = pointArray[0];
+            // Find tip of Cone
+            currentPoint = pointArray[0];
             averageX = (pointArray[1].x + pointArray[2].x) / 2;
             averageY = (pointArray[1].y + pointArray[2].y) / 2;
-          } else if (medianArray.get(1) > medianArray.get(0) && medianArray.get(1) > medianArray.get(2)) {
-            finalPoint = pointArray[1];
+            currentOppositeMidpoint = new Point(averageX, averageY);
+            medianArray.add(Math.sqrt(Math.pow(currentPoint.x - currentOppositeMidpoint.x, 2) + Math.pow((currentPoint.y - currentOppositeMidpoint.y), 2)));
+
+            currentPoint = pointArray[1];
             averageX = (pointArray[0].x + pointArray[2].x) / 2;
             averageY = (pointArray[0].y + pointArray[2].y) / 2;
-          } else if (medianArray.get(2) > medianArray.get(0) && medianArray.get(2) > medianArray.get(1)) {
-            finalPoint = pointArray[2];
+            currentOppositeMidpoint = new Point(averageX, averageY);
+            medianArray.add(Math.sqrt(Math.pow(currentPoint.x - currentOppositeMidpoint.x, 2) + Math.pow((currentPoint.y - currentOppositeMidpoint.y), 2)));
+
+            currentPoint = pointArray[2];
             averageX = (pointArray[0].x + pointArray[1].x) / 2;
             averageY = (pointArray[0].y + pointArray[1].y) / 2;
-          }
+            currentOppositeMidpoint = new Point(averageX, averageY);
+            medianArray.add(Math.sqrt(Math.pow(currentPoint.x - currentOppositeMidpoint.x, 2) + Math.pow((currentPoint.y - currentOppositeMidpoint.y), 2)));
 
-
-          currentOppositeMidpoint = new Point(averageX, averageY);
-          if (finalPoint.x == currentOppositeMidpoint.x) { /* Straight up-and-down */
-            slope = 0.0d;
-          } else {
-            slope = (finalPoint.y - currentOppositeMidpoint.y) / (finalPoint.x - currentOppositeMidpoint.x);
-          }
-
-          absoluteCenter = new Point((currentOppositeMidpoint.x + finalPoint.x) / 2, (currentOppositeMidpoint.y + finalPoint.y) / 2);
-          slope = Math.abs(slope);
-
-          if (finalPoint.x > absoluteCenter.x && finalPoint.y < absoluteCenter.y || finalPoint.x > absoluteCenter.x && finalPoint.y > absoluteCenter.y)  { 
-            if (finalPoint.x > absoluteCenter.x && finalPoint.y < absoluteCenter.y) {
-              slope *= 1;
-            } else if (finalPoint.x > absoluteCenter.x && finalPoint.y > absoluteCenter.y) { 
-              slope *= -1;
+            double slope, angleOfSlope = 0;
+            if (medianArray.get(0) > medianArray.get(1) && medianArray.get(0) > medianArray.get(2)) {
+              finalPoint = pointArray[0];
+              averageX = (pointArray[1].x + pointArray[2].x) / 2;
+              averageY = (pointArray[1].y + pointArray[2].y) / 2;
+            } else if (medianArray.get(1) > medianArray.get(0) && medianArray.get(1) > medianArray.get(2)) {
+              finalPoint = pointArray[1];
+              averageX = (pointArray[0].x + pointArray[2].x) / 2;
+              averageY = (pointArray[0].y + pointArray[2].y) / 2;
+            } else if (medianArray.get(2) > medianArray.get(0) && medianArray.get(2) > medianArray.get(1)) {
+              finalPoint = pointArray[2];
+              averageX = (pointArray[0].x + pointArray[1].x) / 2;
+              averageY = (pointArray[0].y + pointArray[1].y) / 2;
             }
-            angleOfSlope = Math.atan(slope);
-            angleOfSlope = Math.toDegrees(angleOfSlope);
-            angleOfSlope += 0;
-            Math.round(angleOfSlope * 100.0 / 100.0);
-          } else if (finalPoint.x < absoluteCenter.x && finalPoint.y > absoluteCenter.y) {
-            slope += 0;
-            angleOfSlope = Math.atan(slope);
-            angleOfSlope = Math.toDegrees(angleOfSlope);
-            angleOfSlope -= 180;
-            Math.round(angleOfSlope * 100.0 / 100.0);
-          } else if (finalPoint.x < absoluteCenter.x && finalPoint.y < absoluteCenter.y) {
-            slope *= -1;
-            angleOfSlope = Math.atan(slope);
-            angleOfSlope = Math.toDegrees(angleOfSlope);
-            angleOfSlope += 180;
-            Math.round(angleOfSlope * 100.0 / 100.0);
-          } else if (finalPoint.x == absoluteCenter.x) { 
-            angleOfSlope = finalPoint.y > absoluteCenter.y ?  -90 : 90; 
-          } else if (finalPoint.y == absoluteCenter.y) {
-            angleOfSlope = finalPoint.x > absoluteCenter.x ? 0 : 180;
-          }
-          
-          if (angleOfSlope == -180 || angleOfSlope == 180) {
-            angleOfSlope = 180;
-          }
 
-          if (angleOfSlope >= 0 && angleOfSlope <= 90) {
-            angleOfSlope = 90 - angleOfSlope;
-          } else if (angleOfSlope > 90 && angleOfSlope <= 180) {
-            angleOfSlope = 180 - angleOfSlope;
-            angleOfSlope = 90 - angleOfSlope;
-            angleOfSlope *= -1;
-          } else if (angleOfSlope >= -90 && angleOfSlope < 0) {
-            angleOfSlope *= -1;
-            angleOfSlope += 90; 
-          } else if (angleOfSlope < 180 && angleOfSlope > -90) {
-            angleOfSlope *= -1;
-            angleOfSlope = 180 - angleOfSlope;
+
+            currentOppositeMidpoint = new Point(averageX, averageY);
+            if (finalPoint.x == currentOppositeMidpoint.x) { /* Straight up-and-down */
+              slope = 0.0d;
+            } else {
+              slope = (finalPoint.y - currentOppositeMidpoint.y) / (finalPoint.x - currentOppositeMidpoint.x);
+            }
+
+            absoluteCenter = new Point((currentOppositeMidpoint.x + finalPoint.x) / 2, (currentOppositeMidpoint.y + finalPoint.y) / 2);
+            slope = Math.abs(slope);
+
+            if (finalPoint.x > absoluteCenter.x && finalPoint.y < absoluteCenter.y || finalPoint.x > absoluteCenter.x && finalPoint.y > absoluteCenter.y)  { 
+              if (finalPoint.x > absoluteCenter.x && finalPoint.y < absoluteCenter.y) {
+                slope *= 1;
+              } else if (finalPoint.x > absoluteCenter.x && finalPoint.y > absoluteCenter.y) { 
+                slope *= -1;
+              }
+              angleOfSlope = Math.atan(slope);
+              angleOfSlope = Math.toDegrees(angleOfSlope);
+              angleOfSlope += 0;
+              Math.round(angleOfSlope * 100.0 / 100.0);
+            } else if (finalPoint.x < absoluteCenter.x && finalPoint.y > absoluteCenter.y) {
+              slope += 0;
+              angleOfSlope = Math.atan(slope);
+              angleOfSlope = Math.toDegrees(angleOfSlope);
+              angleOfSlope -= 180;
+              Math.round(angleOfSlope * 100.0 / 100.0);
+            } else if (finalPoint.x < absoluteCenter.x && finalPoint.y < absoluteCenter.y) {
+              slope *= -1;
+              angleOfSlope = Math.atan(slope);
+              angleOfSlope = Math.toDegrees(angleOfSlope);
+              angleOfSlope += 180;
+              Math.round(angleOfSlope * 100.0 / 100.0);
+            } else if (finalPoint.x == absoluteCenter.x) { 
+              angleOfSlope = finalPoint.y > absoluteCenter.y ?  -90 : 90; 
+            } else if (finalPoint.y == absoluteCenter.y) {
+              angleOfSlope = finalPoint.x > absoluteCenter.x ? 0 : 180;
+            }
+            
+            if (angleOfSlope == -180 || angleOfSlope == 180) {
+              angleOfSlope = 180;
+            }
+
+            if (angleOfSlope >= 0 && angleOfSlope <= 90) {
+              angleOfSlope = 90 - angleOfSlope;
+            } else if (angleOfSlope > 90 && angleOfSlope <= 180) {
+              angleOfSlope = 180 - angleOfSlope;
+              angleOfSlope = 90 - angleOfSlope;
+              angleOfSlope *= -1;
+            } else if (angleOfSlope >= -90 && angleOfSlope < 0) {
+              angleOfSlope *= -1;
+              angleOfSlope += 90; 
+            } else if (angleOfSlope < 180 && angleOfSlope > -90) {
+              angleOfSlope *= -1;
+              angleOfSlope = 180 - angleOfSlope;
+            }
+            Imgproc.line(Main.original, finalPoint, currentOppositeMidpoint, new Scalar(57, 255, 20));
+            Imgproc.circle(Main.original, absoluteCenter, 2, new Scalar(255, 0, 0));
+            Main.outputStream.putFrame(Main.original);
+            SmartDashboard.putNumber("Cone Angle", angleOfSlope);
+            SmartDashboard.putString("Center", "(" + Math.round(absoluteCenter.x) + ", " + Math.round(absoluteCenter.y) + ")");
+            SmartDashboard.putString("Tip", "(" + Math.round(finalPoint.x) + ", " + Math.round(finalPoint.y) + ")");
+            SmartDashboard.putNumber("Cone X", absoluteCenter.x);
+            SmartDashboard.putNumber("Cone Y", absoluteCenter.y);
+            SmartDashboard.putBoolean("Cone in Vision", true);
+            SmartDashboard.putBoolean("Standing Up", standingUp);
           }
-
-          Imgproc.line(Main.original, finalPoint, currentOppositeMidpoint, new Scalar(57, 255, 20));
-          Imgproc.circle(Main.original, absoluteCenter, 2, new Scalar(255, 0, 0));
-          Main.outputStream.putFrame(Main.original);
-
-          SmartDashboard.putNumber("Cone Angle", angleOfSlope);
-          SmartDashboard.putString("Center", "(" + Math.round(absoluteCenter.x) + ", " + Math.round(absoluteCenter.y) + ")");
-          SmartDashboard.putString("Tip", "(" + Math.round(finalPoint.x) + ", " + Math.round(finalPoint.y) + ")");
-          SmartDashboard.putNumber("Cone X", absoluteCenter.x);
-          SmartDashboard.putNumber("Cone Y", absoluteCenter.y);
-          SmartDashboard.putBoolean("Cone in Vision", true);
         } else {
           Main.outputStream.putFrame(Main.original);
           SmartDashboard.putNumber("Cone Angle", 0.0d);
@@ -1140,6 +1152,7 @@ public final class Main {
           SmartDashboard.putNumber("Cone X", 0.0d);
           SmartDashboard.putNumber("Cone Y", 0.0d);
           SmartDashboard.putBoolean("Cone in Vision", false);
+          SmartDashboard.putBoolean("Standing Up", false);
         }
         
         if (!(Main.cubePipeline.filterContoursOutput().size() == 0)) {
@@ -1179,7 +1192,7 @@ public final class Main {
                           Imgproc.LINE_4);
 
           Imgproc.circle(Main.original, new Point(rectBCube.x + (rectBCube.width / 2), rectBCube.y + (rectBCube.height / 2)), 1, new Scalar(57, 255, 20));
-
+          Main.outputStreamCube.putFrame(Main.original);
           SmartDashboard.putNumber("Angle of Cube", angleCube);
           SmartDashboard.putNumber("Cube X", rectBCube.x + (rectBCube.width / 2));
           SmartDashboard.putNumber("Cube Y", rectBCube.y + (rectBCube.height / 2));                
@@ -1187,8 +1200,8 @@ public final class Main {
           SmartDashboard.putNumber("Cube Width", rectBCube.width);
           SmartDashboard.putNumber("Cube Height", rectBCube.height);
           SmartDashboard.putNumber("Cube Area", Imgproc.contourArea(largestMatrixCube));
-          Main.outputStreamCube.putFrame(Main.original);
         } else {
+          Main.outputStreamCube.putFrame(Main.original);
           SmartDashboard.putNumber("Angle of Cube", 0.0d);
           SmartDashboard.putNumber("Cube X", 0.0d);
           SmartDashboard.putNumber("Cube Y", 0.0d);  
@@ -1196,7 +1209,6 @@ public final class Main {
           SmartDashboard.putNumber("Cube Height", 0.0d);
           SmartDashboard.putNumber("Cube Area", 0.0d); 
           SmartDashboard.putBoolean("Cube in Vision", false);
-          Main.outputStreamCube.putFrame(Main.original);
         }
       });
       visionThread.start();
