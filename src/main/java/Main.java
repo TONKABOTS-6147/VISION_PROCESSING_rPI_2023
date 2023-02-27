@@ -326,9 +326,9 @@ public final class Main {
   
       // Step HSV_Threshold0:
       Mat hsvThresholdInput = blurOutput;
-      double[] hsvThresholdHue = {106.47748413729595, 180.0};
-      double[] hsvThresholdSaturation = {44.55292424280866, 162.99611843486696};
-      double[] hsvThresholdValue = {90.26540007646797, 255.0};
+      double[] hsvThresholdHue = {110.07194784905415, 151.0385228179827};
+      double[] hsvThresholdSaturation = {85.17471721275247, 204.02490267574584};
+      double[] hsvThresholdValue = {150.69374088331952, 255.0};
       hsvThreshold(hsvThresholdInput, hsvThresholdHue, hsvThresholdSaturation, hsvThresholdValue, hsvThresholdOutput);
   
       // Step CV_erode0:
@@ -356,11 +356,11 @@ public final class Main {
   
       // Step Filter_Contours0:
       ArrayList<MatOfPoint> filterContoursContours = findContoursOutput;
-      double filterContoursMinArea = 140.0;
+      double filterContoursMinArea = 565.0;
       double filterContoursMinPerimeter = 90.0;
-      double filterContoursMinWidth = 0;
-      double filterContoursMaxWidth = 984.0;
-      double filterContoursMinHeight = 0;
+      double filterContoursMinWidth = 24.0;
+      double filterContoursMaxWidth = 1000.0;
+      double filterContoursMinHeight = 24.0;
       double filterContoursMaxHeight = 1000;
       double[] filterContoursSolidity = {0.5380680781075285, 100};
       double filterContoursMaxVertices = 1000000;
@@ -646,21 +646,21 @@ public final class Main {
       Main.original = source0;
       Mat blurInput = source0;
       BlurType blurType = BlurType.get("Gaussian Blur");
-      double blurRadius = 5.621523057119637;
+		  double blurRadius = 4.761902920834649;
       blur(blurInput, blurType, blurRadius, blurOutput);
   
       // Step HSV_Threshold0:
       Mat hsvThresholdInput = blurOutput;
-      double[] hsvThresholdHue = {0.0, 37.98189595530153};
-      double[] hsvThresholdSaturation = {50.887672088497325, 174.18575592822182};
-      double[] hsvThresholdValue = {161.11506841619806, 255.0};
+      double[] hsvThresholdHue = {0.0, 32.31300281480386};
+		  double[] hsvThresholdSaturation = {73.16413475663491, 255.0};
+		  double[] hsvThresholdValue = {180.77076742571603, 255.0};
       hsvThreshold(hsvThresholdInput, hsvThresholdHue, hsvThresholdSaturation, hsvThresholdValue, hsvThresholdOutput);
   
       // Step CV_erode0:
       Mat cvErodeSrc = hsvThresholdOutput;
       Mat cvErodeKernel = new Mat();
       Point cvErodeAnchor = new Point(-1, -1);
-      double cvErodeIterations = 4.0;
+      double cvErodeIterations = 3.0;
       int cvErodeBordertype = Core.BORDER_CONSTANT;
       Scalar cvErodeBordervalue = new Scalar(-1);
       cvErode(cvErodeSrc, cvErodeKernel, cvErodeAnchor, cvErodeIterations, cvErodeBordertype, cvErodeBordervalue, cvErodeOutput);
@@ -669,7 +669,7 @@ public final class Main {
       Mat cvDilateSrc = cvErodeOutput;
       Mat cvDilateKernel = new Mat();
       Point cvDilateAnchor = new Point(-1, -1);
-      double cvDilateIterations = 4.0;
+      double cvDilateIterations = 3.0;
       int cvDilateBordertype = Core.BORDER_CONSTANT;
       Scalar cvDilateBordervalue = new Scalar(-1);
       cvDilate(cvDilateSrc, cvDilateKernel, cvDilateAnchor, cvDilateIterations, cvDilateBordertype, cvDilateBordervalue, cvDilateOutput);
@@ -681,11 +681,11 @@ public final class Main {
   
       // Step Filter_Contours0:
       ArrayList<MatOfPoint> filterContoursContours = findContoursOutput;
-      double filterContoursMinArea = 600.0;
-      double filterContoursMinPerimeter = 80.0;
-      double filterContoursMinWidth = 0.0;
+      double filterContoursMinArea = 250.0; /* 625 */
+      double filterContoursMinPerimeter = 20.0; /* 80 */
+      double filterContoursMinWidth = 0.0; /* 24 */
       double filterContoursMaxWidth = 800.0;
-      double filterContoursMinHeight = 0.0;
+      double filterContoursMinHeight = 0.0; /* 24 */
       double filterContoursMaxHeight = 2000.0;
       double[] filterContoursSolidity = {0.0, 100.0};
       double filterContoursMaxVertices = 1000000.0;
@@ -981,7 +981,7 @@ public final class Main {
 
     // start image processing on camera 0 if present
     if (cameras.size() >= 1) {
-      VisionThread visionThread = new VisionThread(cameras.get(0), new ConePipeline(), pipeline ->  {
+      VisionThread visionThread = new VisionThread(cameras.get(0), new ConePipeline(), pipeline -> {
         if (!(pipeline.filterContoursOutput().size() == 0)) {
           MatOfPoint largestMatrix = pipeline.filterContoursOutput().get(0);
           for (MatOfPoint contour : pipeline.filterContoursOutput()) {
@@ -991,46 +991,155 @@ public final class Main {
           }
 
           // Splits up the largest matrix into an array to be processed:
-          MatOfPoint2f matrix = new MatOfPoint2f(largestMatrix.toArray());
-          RotatedRect rect;
-          rect = Imgproc.minAreaRect(matrix);
-          matrix.release();
-          Point[] boxPts = new Point[4];
-          rect.points(boxPts);
-          List<MatOfPoint> listMidContour = new ArrayList<MatOfPoint>();
-          listMidContour.add(new MatOfPoint(boxPts[0], boxPts[1], boxPts[2], boxPts[3]));
-          double angle = rect.angle;
+          // MatOfPoint2f matrix = new MatOfPoint2f(largestMatrix.toArray());
+          // RotatedRect rect;
+          // rect = Imgproc.minAreaRect(matrix);
+          // matrix.release();
+          // Point[] boxPts = new Point[4];
+          // rect.points(boxPts);
+          // List<MatOfPoint> listMidContour = new ArrayList<MatOfPoint>();
+          // listMidContour.add(new MatOfPoint(boxPts[0], boxPts[1], boxPts[2], boxPts[3]));
+          // double angle = rect.angle;
 
-          Rect rectB = Imgproc.boundingRect(largestMatrix);
-          Point[] bBoxPts = { new Point(rectB.x, rectB.y), new Point(rectB.x + rectB.width, rectB.y), new Point(rectB.x + rectB.width, rectB.y + rectB.height), new Point(rectB.x, rectB.y + rectB.height) };
-          List<MatOfPoint> bListMidContour = new ArrayList<MatOfPoint>();
-          bListMidContour.add(new MatOfPoint(bBoxPts[0], bBoxPts[1], bBoxPts[2], bBoxPts[3]));
+          // Rect rectB = Imgproc.boundingRect(largestMatrix);
+          // Point[] bBoxPts = { new Point(rectB.x, rectB.y), new Point(rectB.x + rectB.width, rectB.y), new Point(rectB.x + rectB.width, rectB.y + rectB.height), new Point(rectB.x, rectB.y + rectB.height) };
+          // List<MatOfPoint> bListMidContour = new ArrayList<MatOfPoint>();
+          // bListMidContour.add(new MatOfPoint(bBoxPts[0], bBoxPts[1], bBoxPts[2], bBoxPts[3]));
       
-          Imgproc.polylines(Main.original /* the original image */,
-                          listMidContour /* The points */,
-                          true /* Is a Closed Polygon? */,
-                          new Scalar(255, 0, 0), /* For RGB Values of Box */
-                          1,
-                          Imgproc.LINE_4 /* Line type */);
-          Imgproc.polylines(Main.original, 
-                          bListMidContour, 
-                          true, 
-                          new Scalar(0, 0, 255), 
-                          1, 
-                          Imgproc.LINE_4);
+          // Imgproc.polylines(Main.original /* the original image */,
+          //                 listMidContour /* The points */,
+          //                 true /* Is a Closed Polygon? */,
+          //                 new Scalar(255, 0, 0), /* For RGB Values of Box */
+          //                 1,
+          //                 Imgproc.LINE_4 /* Line type */);
+          // Imgproc.polylines(Main.original, 
+          //                 bListMidContour, 
+          //                 true, 
+          //                 new Scalar(0, 0, 255), 
+          //                 1, 
+          //                 Imgproc.LINE_4);
+          // Imgproc.circle(Main.original, new Point(rectB.x + (rectB.width / 2), rectB.y + (rectB.height / 2)), 1, new Scalar(57, 255, 20));
 
+          MatOfPoint2f triangle = new MatOfPoint2f();
+          Imgproc.minEnclosingTriangle(largestMatrix, triangle);
+          Point[] pointArray = triangle.toArray();
+          for (int index = 0; index < 3; index++) { Imgproc.line(Main.original, pointArray[index], pointArray[(index + 1) % 3], new Scalar(57, 255, 20), 1, 1); }
+          
+          // Process Triangle Medians:
+          ArrayList<Double> medianArray = new ArrayList<Double>(3);
+          Point currentPoint, currentOppositeMidpoint, absoluteCenter;
+          Point finalPoint = new Point(0, 0);
+          double averageX, averageY;
+
+          // Find tip of Cone
+          currentPoint = pointArray[0];
+          averageX = (pointArray[1].x + pointArray[2].x) / 2;
+          averageY = (pointArray[1].y + pointArray[2].y) / 2;
+          currentOppositeMidpoint = new Point(averageX, averageY);
+          medianArray.add(Math.sqrt(Math.pow(currentPoint.x - currentOppositeMidpoint.x, 2) + Math.pow((currentPoint.y - currentOppositeMidpoint.y), 2)));
+
+          currentPoint = pointArray[1];
+          averageX = (pointArray[0].x + pointArray[2].x) / 2;
+          averageY = (pointArray[0].y + pointArray[2].y) / 2;
+          currentOppositeMidpoint = new Point(averageX, averageY);
+          medianArray.add(Math.sqrt(Math.pow(currentPoint.x - currentOppositeMidpoint.x, 2) + Math.pow((currentPoint.y - currentOppositeMidpoint.y), 2)));
+
+          currentPoint = pointArray[2];
+          averageX = (pointArray[0].x + pointArray[1].x) / 2;
+          averageY = (pointArray[0].y + pointArray[1].y) / 2;
+          currentOppositeMidpoint = new Point(averageX, averageY);
+          medianArray.add(Math.sqrt(Math.pow(currentPoint.x - currentOppositeMidpoint.x, 2) + Math.pow((currentPoint.y - currentOppositeMidpoint.y), 2)));
+
+          double slope, angleOfSlope = 0;
+          if (medianArray.get(0) > medianArray.get(1) && medianArray.get(0) > medianArray.get(2)) {
+            finalPoint = pointArray[0];
+            averageX = (pointArray[1].x + pointArray[2].x) / 2;
+            averageY = (pointArray[1].y + pointArray[2].y) / 2;
+          } else if (medianArray.get(1) > medianArray.get(0) && medianArray.get(1) > medianArray.get(2)) {
+            finalPoint = pointArray[1];
+            averageX = (pointArray[0].x + pointArray[2].x) / 2;
+            averageY = (pointArray[0].y + pointArray[2].y) / 2;
+          } else if (medianArray.get(2) > medianArray.get(0) && medianArray.get(2) > medianArray.get(1)) {
+            finalPoint = pointArray[2];
+            averageX = (pointArray[0].x + pointArray[1].x) / 2;
+            averageY = (pointArray[0].y + pointArray[1].y) / 2;
+          }
+
+
+          currentOppositeMidpoint = new Point(averageX, averageY);
+          if (finalPoint.x == currentOppositeMidpoint.x) { /* Straight up-and-down */
+            slope = 0.0d;
+          } else {
+            slope = (finalPoint.y - currentOppositeMidpoint.y) / (finalPoint.x - currentOppositeMidpoint.x);
+          }
+
+          absoluteCenter = new Point((currentOppositeMidpoint.x + finalPoint.x) / 2, (currentOppositeMidpoint.y + finalPoint.y) / 2);
+          slope = Math.abs(slope);
+
+          if (finalPoint.x > absoluteCenter.x && finalPoint.y < absoluteCenter.y || finalPoint.x > absoluteCenter.x && finalPoint.y > absoluteCenter.y)  { 
+            if (finalPoint.x > absoluteCenter.x && finalPoint.y < absoluteCenter.y) {
+              slope *= 1;
+            } else if (finalPoint.x > absoluteCenter.x && finalPoint.y > absoluteCenter.y) { 
+              slope *= -1;
+            }
+            angleOfSlope = Math.atan(slope);
+            angleOfSlope = Math.toDegrees(angleOfSlope);
+            angleOfSlope += 0;
+            Math.round(angleOfSlope * 100.0 / 100.0);
+          } else if (finalPoint.x < absoluteCenter.x && finalPoint.y > absoluteCenter.y) {
+            slope += 0;
+            angleOfSlope = Math.atan(slope);
+            angleOfSlope = Math.toDegrees(angleOfSlope);
+            angleOfSlope -= 180;
+            Math.round(angleOfSlope * 100.0 / 100.0);
+          } else if (finalPoint.x < absoluteCenter.x && finalPoint.y < absoluteCenter.y) {
+            slope *= -1;
+            angleOfSlope = Math.atan(slope);
+            angleOfSlope = Math.toDegrees(angleOfSlope);
+            angleOfSlope += 180;
+            Math.round(angleOfSlope * 100.0 / 100.0);
+          } else if (finalPoint.x == absoluteCenter.x) { 
+            angleOfSlope = finalPoint.y > absoluteCenter.y ?  -90 : 90; 
+          } else if (finalPoint.y == absoluteCenter.y) {
+            angleOfSlope = finalPoint.x > absoluteCenter.x ? 0 : 180;
+          }
+          
+          if (angleOfSlope == -180 || angleOfSlope == 180) {
+            angleOfSlope = 180;
+          }
+
+          if (angleOfSlope >= 0 && angleOfSlope <= 90) {
+            angleOfSlope = 90 - angleOfSlope;
+          } else if (angleOfSlope > 90 && angleOfSlope <= 180) {
+            angleOfSlope = 180 - angleOfSlope;
+            angleOfSlope = 90 - angleOfSlope;
+            angleOfSlope *= -1;
+          } else if (angleOfSlope >= -90 && angleOfSlope < 0) {
+            angleOfSlope *= -1;
+            angleOfSlope += 90; 
+          } else if (angleOfSlope < 180 && angleOfSlope > -90) {
+            angleOfSlope *= -1;
+            angleOfSlope = 180 - angleOfSlope;
+          }
+
+          Imgproc.line(Main.original, finalPoint, currentOppositeMidpoint, new Scalar(57, 255, 20));
+          Imgproc.circle(Main.original, absoluteCenter, 2, new Scalar(255, 0, 0));
           Main.outputStream.putFrame(Main.original);
 
-          SmartDashboard.putNumber("Angle of Cone", angle);
-          SmartDashboard.putNumber("Cone X", rect.center.x);
-          SmartDashboard.putNumber("Cone Y", rect.center.y);
+          SmartDashboard.putNumber("Cone Angle", angleOfSlope);
+          SmartDashboard.putString("Center", "(" + Math.round(absoluteCenter.x) + ", " + Math.round(absoluteCenter.y) + ")");
+          SmartDashboard.putString("Tip", "(" + Math.round(finalPoint.x) + ", " + Math.round(finalPoint.y) + ")");
+          SmartDashboard.putNumber("Cone X", absoluteCenter.x);
+          SmartDashboard.putNumber("Cone Y", absoluteCenter.y);
           SmartDashboard.putBoolean("Cone in Vision", true);
         } else {
-          SmartDashboard.putNumber("Angle of Cone", 0.0d);
+          Main.outputStream.putFrame(Main.original);
+          SmartDashboard.putNumber("Cone Angle", 0.0d);
+          SmartDashboard.putString("Center", "(" + 0.0d + ", " + 0.0d + ")");
+          SmartDashboard.putString("Tip", "(" + 0.0d + ", " + 0.0d + ")");
           SmartDashboard.putNumber("Cone X", 0.0d);
           SmartDashboard.putNumber("Cone Y", 0.0d);
           SmartDashboard.putBoolean("Cone in Vision", false);
-          Main.outputStream.putFrame(Main.original);
         }
         
         if (!(Main.cubePipeline.filterContoursOutput().size() == 0)) {
@@ -1065,19 +1174,27 @@ public final class Main {
           Imgproc.polylines(Main.original, 
                           bListMidContourCube, 
                           true, 
-                          new Scalar(0, 0, 255), 
+                          new Scalar(57, 255, 20), 
                           1, 
                           Imgproc.LINE_4);
 
+          Imgproc.circle(Main.original, new Point(rectBCube.x + (rectBCube.width / 2), rectBCube.y + (rectBCube.height / 2)), 1, new Scalar(57, 255, 20));
+
           SmartDashboard.putNumber("Angle of Cube", angleCube);
-          SmartDashboard.putNumber("Cube X", rectCube.center.x);
-          SmartDashboard.putNumber("Cube Y", rectCube.center.y);                
+          SmartDashboard.putNumber("Cube X", rectBCube.x + (rectBCube.width / 2));
+          SmartDashboard.putNumber("Cube Y", rectBCube.y + (rectBCube.height / 2));                
           SmartDashboard.putBoolean("Cube in Vision", true);
+          SmartDashboard.putNumber("Cube Width", rectBCube.width);
+          SmartDashboard.putNumber("Cube Height", rectBCube.height);
+          SmartDashboard.putNumber("Cube Area", Imgproc.contourArea(largestMatrixCube));
           Main.outputStreamCube.putFrame(Main.original);
         } else {
           SmartDashboard.putNumber("Angle of Cube", 0.0d);
           SmartDashboard.putNumber("Cube X", 0.0d);
-          SmartDashboard.putNumber("Cube Y", 0.0d);   
+          SmartDashboard.putNumber("Cube Y", 0.0d);  
+          SmartDashboard.putNumber("Cube Width", 0.0d);
+          SmartDashboard.putNumber("Cube Height", 0.0d);
+          SmartDashboard.putNumber("Cube Area", 0.0d); 
           SmartDashboard.putBoolean("Cube in Vision", false);
           Main.outputStreamCube.putFrame(Main.original);
         }
