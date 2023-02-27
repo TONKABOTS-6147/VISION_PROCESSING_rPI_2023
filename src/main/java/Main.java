@@ -1030,6 +1030,7 @@ public final class Main {
             SmartDashboard.putNumber("Cone Y", rectB.y + (rectB.height / 2));
             SmartDashboard.putBoolean("Cone in Vision", true);
             SmartDashboard.putBoolean("Standing Up", standingUp);
+            SmartDashboard.putNumber("Cone Area", Imgproc.contourArea(largestMatrix));
           } else {
             standingUp = false;
             MatOfPoint2f triangle = new MatOfPoint2f();
@@ -1116,9 +1117,7 @@ public final class Main {
               angleOfSlope = finalPoint.x > absoluteCenter.x ? 0 : 180;
             }
             
-            if (angleOfSlope == -180 || angleOfSlope == 180) {
-              angleOfSlope = 180;
-            }
+            angleOfSlope = (angleOfSlope == -180 || angleOfSlope == 180) ? 180 : angleOfSlope;
 
             if (angleOfSlope >= 0 && angleOfSlope <= 90) {
               angleOfSlope = 90 - angleOfSlope;
@@ -1143,6 +1142,7 @@ public final class Main {
             SmartDashboard.putNumber("Cone Y", absoluteCenter.y);
             SmartDashboard.putBoolean("Cone in Vision", true);
             SmartDashboard.putBoolean("Standing Up", standingUp);
+            SmartDashboard.putNumber("Cone Area", Imgproc.contourArea(largestMatrix));
           }
         } else {
           Main.outputStream.putFrame(Main.original);
@@ -1153,6 +1153,7 @@ public final class Main {
           SmartDashboard.putNumber("Cone Y", 0.0d);
           SmartDashboard.putBoolean("Cone in Vision", false);
           SmartDashboard.putBoolean("Standing Up", false);
+          SmartDashboard.putNumber("Cone Area", 0);
         }
         
         if (!(Main.cubePipeline.filterContoursOutput().size() == 0)) {
@@ -1196,10 +1197,10 @@ public final class Main {
           SmartDashboard.putNumber("Angle of Cube", angleCube);
           SmartDashboard.putNumber("Cube X", rectBCube.x + (rectBCube.width / 2));
           SmartDashboard.putNumber("Cube Y", rectBCube.y + (rectBCube.height / 2));                
-          SmartDashboard.putBoolean("Cube in Vision", true);
           SmartDashboard.putNumber("Cube Width", rectBCube.width);
           SmartDashboard.putNumber("Cube Height", rectBCube.height);
           SmartDashboard.putNumber("Cube Area", Imgproc.contourArea(largestMatrixCube));
+          SmartDashboard.putBoolean("Cube in Vision", true);
         } else {
           Main.outputStreamCube.putFrame(Main.original);
           SmartDashboard.putNumber("Angle of Cube", 0.0d);
